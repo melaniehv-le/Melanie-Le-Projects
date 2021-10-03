@@ -1,0 +1,229 @@
+import sys, threading, time
+from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QBrush
+from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton
+import random
+
+CELL_COUNT = 8
+CELL_SIZE = 50
+GRID_ORIGINX = 50
+GRID_ORIGINY = 50
+W_WIDTH = 500
+W_HEIGHT = 500
+
+class BubbleBreaker(QWidget):
+
+    def __init__(self):
+        super().__init__()
+        self.__board = [['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', '']]
+        self.__score = 0
+        self.__line = False
+        self.__winner = False
+        self.__multiplier = 1
+        self.setWindowTitle('Tribe Bubbles')
+        self.setGeometry(400, 400, W_WIDTH, W_HEIGHT)
+        self.show()
+
+    def paintEvent(self, event):
+        qp = QPainter()
+        pen = QPen(QBrush(Qt.black), 1)
+        qp.begin(self)
+        qp.fillRect(event.rect(), Qt.white)
+        qp.setPen(pen)
+        qp.drawText(10,30, "Restart Game")
+        qp.drawRect(0, 10, 100, 30)
+
+
+        for r in range(len(self.__board)):
+            for c in range(len(self.__board[r])):
+                qp.drawRect(GRID_ORIGINX + c * CELL_SIZE, GRID_ORIGINY + r * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                if self.__board[r][c] == 1:
+                    qp.drawEllipse(GRID_ORIGINX + c * CELL_SIZE+ 3, GRID_ORIGINY + r * CELL_SIZE+ 3, CELL_SIZE - 6, CELL_SIZE- 6)
+                if self.__board[r][c] == 2:
+                    Pen = QColor("aqua")
+                    qp.setBrush(Pen)
+                    qp.drawRect(GRID_ORIGINX + c * CELL_SIZE + 3, GRID_ORIGINY + r * CELL_SIZE + 3, CELL_SIZE- 6, CELL_SIZE- 6)
+                    brush = QColor("white")
+                    qp.setBrush(brush)
+        qp.setPen(pen)
+        qp.drawText(50,475, "Score: " + str(self.__score) + " x" + str(self.__multiplier))
+        qp.end()
+
+    def mousePressEvent(self, event):
+        self.x = event.x()
+        self.y = event.y()
+        in_grid = False
+
+        if self.x in range(50,450):
+            if self.y in range(50,450):
+                in_grid = True
+        if in_grid == False:
+            if self.x in range(0,100):
+                if self.y in range(10,40):
+                    self.__board = [['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', '']]
+                    self.__score = 0
+                    self.__line = False
+                    self.__winner = False
+                    self.__multiplier = 1
+            else:
+                return
+        if in_grid == True:
+            col = ((self.x - GRID_ORIGINX) // CELL_SIZE)
+            row = ((self.y - GRID_ORIGINY) // CELL_SIZE)
+            board = []
+            if self.__board[row][col] == '':
+                self.__board[row][col] = 1
+                self.line(row, col)
+                self.diagonal(row, col)
+                if self.__board[row][col] == 1:
+                    for r in range(len(self.__board)):
+                        for c in range(len(self.__board[r])):
+                            if self.__board[r][c] == '':
+                                rand_coord = [r, c]
+                                board.append(rand_coord)
+                    listran = board[random.randint(0,len(board)-1)]
+                    self.__board[listran[0]][listran[1]] = 2
+
+        self.update()
+
+    def line(self, r, c):
+        lcount = 0
+        scoreleft = 0
+        for col in range(c, -1, -1):
+            if self.__board[r][col] == 1:
+                lcount += 1
+                if lcount > 3:
+                    for left in range(col , c+1):
+                        self.__board[r][left] = ''
+                        scoreleft += 1
+                    self.__board[r][col] = ''
+                self.__score += scoreleft
+
+            else:
+                break
+
+        scoreright = 0
+        rcount = 0
+        for col in range(c, 8, 1):
+            if self.__board[r][col] == 1:
+                rcount += 1
+                if rcount > 3:
+                    for left in range(c, col):
+                        self.__board[r][left] = ''
+                        scoreright += 1
+                    self.__score += scoreright
+                    self.__board[r][col] = ''
+
+            else:
+                break
+
+        scoremid = 0
+        if lcount + rcount > 4:
+            for left in range(c-lcount+1, c+rcount):
+                self.__board[r][left] = ''
+                self.__board[r][col] = ''
+                scoremid += 1
+            self.__score += scoremid
+            self.__board[r][left] = ''
+            self.__update_score()
+
+
+        scoreup = 0
+        countup = 0
+        for row in range(r, -1, -1):
+            if self.__board[row][c] == 1:
+                countup += 1
+                if countup > 3:
+                    for rowleft in range(row, r+1):
+                        self.__board[rowleft][c] = ''
+                        scoreup += 1
+                    self.__score += scoreup
+                    self.__board[row][c] = ''
+
+            else:
+                break
+
+        scoredown = 0
+        countdown = 0
+        for row in range(r, 8):
+            if self.__board[row][c] == 1:
+                countdown += 1
+                if countdown > 3:
+                    for rowleft in range(r, row):
+                        self.__board[rowleft][c] = ''
+                        scoredown += 1
+                    self.__score += scoredown 
+                    self.__board[row][c] = ''
+
+            else:
+                break
+
+        scoremiddle = 0
+        if countup + countdown > 4:
+            for rowleft in range(r-countup+1, r+countdown):
+                self.__board[rowleft][c] = ''
+                scoremiddle += 1
+            self.__score += scoremiddle
+            self.__board[rowleft][c] = ''
+            self.__update_score()
+
+
+    def diagonal(self, r, c):
+        scorediag = 0
+        newlist = []
+        marker_list =[[4,0],[3,0],[2,0],[1,0],[0,0],[0,1],[0,2],[0,3],[0,4]]
+        for coord in marker_list:
+            row = coord[0]
+            col = coord[1]
+            while row < len(self.__board) -3 and col < len(self.__board) -3:
+                if self.__board[row][col] == 1:
+                    marker = [[row,col]]
+                    while row + 1 < len(self.__board) and col+1 < len(self.__board) and self.__board[row+1][col+1] == 1:
+                        row = row + 1
+                        col = col + 1
+                        marker.append([row,col])
+                    if len(marker) >= 4:
+                        newlist.append(marker)
+                row += 1
+                col += 1
+
+        for r in range(len(newlist)):
+            for c in range(len(newlist[r])):
+                self.__score += scorediag + 1
+                self.__board[newlist[r][c][0]][newlist[r][c][1]] = ''
+
+
+        marker_list =[[4,7], [3,7], [2,7], [1,7], [0,7], [0,6], [0,5], [0,4], [0,3]]
+        for coord in marker_list:
+            row = coord[0]
+            col = coord[1]
+            while row < len(self.__board) -3 and col > 3:
+                if self.__board[row][col] == 1:
+                    marker = [[row,col]]
+                    while row + 1 < len(self.__board) and col-1 > 0 and self.__board[row+1][col-1]== 1:
+                        row += 1
+                        col -= 1
+                        marker.append([row,col])
+                    if len(marker) >= 4:
+                        newlist.append(marker)
+                row = row + 1
+                col = col - 1
+        for r in range(len(newlist)):
+            for c in range(len(newlist[r])):
+                self.__board[newlist[r][c][0]][newlist[r][c][1]] = ''
+                self.__score += scorediag
+
+
+
+    def __update_score(self):
+        self.__score = self.__score + (self.__multiplier ** 2)
+
+
+
+
+if __name__ == '__main__':
+  app = QApplication(sys.argv)
+  ex = BubbleBreaker()
+  sys.exit(app.exec_())
