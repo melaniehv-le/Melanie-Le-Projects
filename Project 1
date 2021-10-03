@@ -1,0 +1,66 @@
+import sys
+from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QBrush
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton
+import random
+
+CELL_COUNT = 8
+CELL_SIZE = 50
+GRID_ORIGINX = 50
+GRID_ORIGINY = 50
+W_WIDTH = 500
+W_HEIGHT = 500
+
+class Fifteen(QWidget):
+
+    def __init__(self):
+      super().__init__()
+      self.setWindowTitle('Fifteen')
+      self.setGeometry(300, 300, W_WIDTH,W_HEIGHT)
+      self.__board = [[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1]]
+      self.__values = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, ' ']
+      self.__winner = False
+      self.__moves = 0
+      self.__inversions = 0
+      solve = False
+
+      self.show()
+
+    def paintEvent(self, event):
+      qp = QPainter()
+      qp.begin(self)
+      for row in range(CELL_COUNT):
+          for col in range(CELL_COUNT):
+              qp.setPen(QPen(Qt.black, 1))
+              qp.drawRect((GRID_ORIGINX+col*CELL_SIZE),(GRID_ORIGINY+row*CELL_SIZE), CELL_SIZE, CELL_SIZE)
+              #qp.drawText((GRID_ORIGINX+col*CELL_SIZE),(GRID_ORIGINY+row*CELL_SIZE), str(self.__board[row][col]))
+      qp.drawText(185,480, "Number of Moves: " + str(self.__moves))
+
+    def mousePressEvent(self, event):
+        self.x = event.x()
+        self.y = event.y()
+        if self.__inversions == 0 and self.__board[3][3] == ' ' and self.x not in range(10,110) and self.y not in range(20,50):
+            self.__winner = True
+            return
+        col = (self.x - GRID_ORIGINX) // CELL_SIZE
+        row = (self.y - GRID_ORIGINY) // CELL_SIZE
+
+        in_grid = False
+        if self.x in range(W_WIDTH - GRID_ORIGINX, 500 - GRID_ORIGINX):
+            if self.y in range(W_HEIGHT - GRID_ORIGINY, 500 - GRID_ORIGINY):
+                in_grid = True
+        if self.x in range(10,110):
+            if self.y in range(20,50):
+                self.__moves = 0
+                self.__values = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, ' ']
+                for row in range(CELL_COUNT):
+                    for col in range(CELL_COUNT):
+                        value = random.choice(self.__values)
+                        self.__board[row][col] = value
+                        self.__values.remove(value)
+                        self.solvable()
+
+if __name__ == '__main__':
+  app = QApplication(sys.argv)
+  ex = Fifteen()
+  sys.exit(app.exec_())
