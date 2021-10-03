@@ -1,0 +1,82 @@
+import sys
+from PyQt5.QtGui import QPainter, QPen, QBrush
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton
+from PyQt5.QtCore import Qt, QRect, QPoint
+from random import randint
+from Shapes import Shape, Rectangle, Square, Triangle, Circle, Ellipse
+
+class ShapeDrawer(QWidget):
+
+  def __init__(self):
+    super().__init__()
+    self.__shapes = list()
+    self.setGeometry(50, 50, 500, 500)
+    self.setWindowTitle('Shapes')
+    pybutton = QPushButton('Spooky Scramble', self)
+    pybutton.resize(150,32)
+    pybutton.move(175, 450)
+    pybutton.clicked.connect(self.button)
+    self.click_x = -1
+    self.click_y = -1
+    self.my_list = []
+    self.scramble = False
+    self.show()
+
+
+  def paintEvent(self, event):
+    qp = QPainter()
+    qp.begin(self)
+    rand = randint(0,4)
+
+
+    if self.click_x >= 0 and self.click_y >= 0:
+        if rand == 0:
+            rect = Rectangle(self.click_x, self.click_y, Qt.black)
+            rect.generate_number()
+            self.my_list.append(rect)
+
+        elif rand == 1:
+            square = Square(self.click_x, self.click_y,Qt.black)
+            square.generate_number()
+            self.my_list.append(square)
+
+        elif rand == 2:
+            tri = Triangle(self.click_x, self.click_y,Qt.black)
+            tri.generate_number()
+            self.my_list.append(tri)
+
+        elif rand == 3:
+            circle = Circle(self.click_x, self.click_y,Qt.black)
+            circle.generate_number()
+            self.my_list.append(circle)
+
+        elif rand == 4:
+            ellipse = Ellipse(self.click_x, self.click_y,Qt.black)
+            ellipse.generate_number()
+            self.my_list.append(ellipse)
+
+
+
+    for item in self.my_list:
+        item.drawShape(qp, self.scramble)
+
+    self.scramble = False
+
+    qp.end()
+
+  def mousePressEvent(self, event):
+      self.click_x = event.x()
+      self.click_y = event.y()
+      print(self.click_x, self.click_y)
+      self.update()
+
+  def button(self, event):
+      print('pressed')
+      self.scramble = True
+      self.update()
+
+
+if __name__ == '__main__':
+  app = QApplication(sys.argv)
+  ex = ShapeDrawer()
+  sys.exit(app.exec_())
